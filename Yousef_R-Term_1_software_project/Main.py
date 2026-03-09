@@ -17,16 +17,20 @@ player_R1 = pygame.image.load("Assets/Character/Right_1.png")
 player_R2 = pygame.image.load("Assets/Character/Right_2.png")
 player_L1 = pygame.image.load("Assets/Character/Left_1.png")
 player_L2 = pygame.image.load("Assets/Character/Left_2.png")
+NPC = pygame.image.load("Assets/Character/NPC.png")
 
 running_speed = 400
 normal_speed = 250
 
 # World & player setup
 world_width = 3840
-world_rect = pygame.Rect(0, 0, world_width, 720)
+floor_rect = pygame.Rect(0, 637, world_width, 720)
+world_rect = pygame.Rect(0, 0, world_width, 637)
 hitbox = player_static.get_rect(center=(world_rect.centerx, 360))  # use static size
+hitbox = NPC.get_rect(center=(world_rect.centerx, 360))
 player_position = pygame.Vector2(hitbox.center)
 camera_x = 0
+
 
 # Animation state
 frame = 0
@@ -35,8 +39,19 @@ last_frame_time = 0
 facing_right = True  # default facing
 
 
+# Solve the physics
+def Physics():
+    global velocity
+    velocity = -1
+    if player_position.y > 630:
+        velocity -= 1
+    velocity = max(0, min(camera_x, world_width - 1280))
+
+    return velocity
+
+
 def move(keys, dt):
-    global facing_right
+    global facing_right, hitbox
     direction = pygame.Vector2(0, 0)
 
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
@@ -54,8 +69,10 @@ def move(keys, dt):
 
     # Clamp to world
     hitbox.centerx = player_position.x
+    hitbox.centery = player_position.y
     hitbox.clamp_ip(world_rect)
     player_position.x = hitbox.centerx
+    player_position.y = hitbox.centery
 
     return direction
 
@@ -97,6 +114,7 @@ while run:
 
     direction = move(keys, dt)
     update_camera(dt)
+    Physics()
 
     # Draw layers
     screen.blit(Bg, (-camera_x * 0.2, 0))
@@ -105,10 +123,9 @@ while run:
     # Draw player (camera relative)
     player_img = get_current_player_image(direction, current_time)
     player_draw_x = player_position.x - camera_x
-    player_draw_y = (
-        player_position.y - player_img.get_height() // 2
-    )  # center Y if needed
-    screen.blit(player_img, (player_draw_x, player_draw_y))
+    player_draw_y = player_position.y - player_img.get_height() // 2
+    screen.blit(player_img, (player_draw_x, (player_draw_y) + velocity))
+    screen.blit(NPC, (-camera_x * 1.0, 490))
 
     screen.blit(Fg, (-camera_x * 1.0, 0))
 
