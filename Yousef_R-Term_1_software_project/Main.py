@@ -1,4 +1,5 @@
 import pygame
+import sys
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -27,10 +28,12 @@ world_width = 3840
 floor_rect = pygame.Rect(0, 637, world_width, 720)
 world_rect = pygame.Rect(0, 0, world_width, 637)
 hitbox = player_static.get_rect(center=(world_rect.centerx, 360))  # use static size
-hitbox = NPC.get_rect(center=(world_rect.centerx, 360))
 player_position = pygame.Vector2(hitbox.center)
 camera_x = 0
 
+velocity = 0
+gravity = 300  # m/s^2
+height = player_static.get_height()
 
 # Animation state
 frame = 0
@@ -40,13 +43,13 @@ facing_right = True  # default facing
 
 
 # Solve the physics
-def Physics():
+def Physics(dt):
     global velocity
-    velocity = -1
-    if player_position.y > 630:
-        velocity -= 1
-    velocity = max(0, min(camera_x, world_width - 1280))
-
+    velocity += gravity * dt
+    player_position.y += velocity * dt
+    if hitbox.bottom >= 637:
+        player_position.y = 637
+        velocity = 0
     return velocity
 
 
@@ -114,7 +117,7 @@ while run:
 
     direction = move(keys, dt)
     update_camera(dt)
-    Physics()
+    Physics(dt)
 
     # Draw layers
     screen.blit(Bg, (-camera_x * 0.2, 0))
@@ -123,8 +126,8 @@ while run:
     # Draw player (camera relative)
     player_img = get_current_player_image(direction, current_time)
     player_draw_x = player_position.x - camera_x
-    player_draw_y = player_position.y - player_img.get_height() // 2
-    screen.blit(player_img, (player_draw_x, (player_draw_y) + velocity))
+    player_draw_y = (player_position.y - player_img.get_height() // 2) - 65
+    screen.blit(player_img, (player_draw_x, player_draw_y))
     screen.blit(NPC, (-camera_x * 1.0, 490))
 
     screen.blit(Fg, (-camera_x * 1.0, 0))
