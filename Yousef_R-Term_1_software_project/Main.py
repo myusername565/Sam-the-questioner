@@ -1,6 +1,6 @@
 import pygame
-import sys
 
+pygame.mixer.init()
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
@@ -8,6 +8,10 @@ run = True
 fps = 60
 
 # Load assets ONCE
+platforms = [
+    pygame.Rect(200, 500, 186, 22),
+    pygame.Rect(500, 450, 186, 22),
+]
 Bg = pygame.image.load("Assets/Map_assets/Background.png")
 Mg = pygame.image.load("Assets/Map_assets/Midground.png")
 Fg = pygame.image.load("Assets/Map_assets/Frontground.png")
@@ -20,13 +24,14 @@ player_L1 = pygame.image.load("Assets/Character/Left_1.png")
 player_L2 = pygame.image.load("Assets/Character/Left_2.png")
 NPC = pygame.image.load("Assets/Character/NPC.png")
 
+
 running_speed = 400
 normal_speed = 250
 
 # World & player setup
 world_width = 3840
 floor_rect = pygame.Rect(0, 637, world_width, 720)
-world_rect = pygame.Rect(0, 0, world_width, 637)
+world_rect = pygame.Rect(0, 0, world_width, 703)
 hitbox = player_static.get_rect(center=(world_rect.centerx, 360))  # use static size
 player_position = pygame.Vector2(hitbox.center)
 camera_x = 0
@@ -42,15 +47,22 @@ last_frame_time = 0
 facing_right = True  # default facing
 
 
-# Solve the physics
+# The physics of the game
 def Physics(dt):
     global velocity
+
     velocity += gravity * dt
     player_position.y += velocity * dt
-    if hitbox.bottom >= 637:
-        player_position.y = 637
+
+    if player_position.y + height / 2 >= 701:
+        player_position.y = 701 - height / 2
         velocity = 0
-    return velocity
+
+
+# The jump function
+def jump():
+    global velocity
+    velocity = -350
 
 
 def move(keys, dt):
@@ -114,11 +126,20 @@ while run:
     keys = pygame.key.get_pressed()
     dt = clock.tick(fps) / 1000.0
     current_time = pygame.time.get_ticks() / 1000.0
+    on_ground = False
 
     direction = move(keys, dt)
     update_camera(dt)
-    Physics(dt)
-
+    if hitbox.bottom >= 701:
+        on_ground = True
+    else:
+        on_ground = False
+    # add arrow condition and dont foget the add
+    if keys[pygame.K_w] and on_ground or keys[pygame.K_UP] and on_ground:
+        jump()
+    else:
+        Physics(dt)
+    hitbox.center = player_position
     # Draw layers
     screen.blit(Bg, (-camera_x * 0.2, 0))
     screen.blit(Mg, (-camera_x * 0.6, 0))
@@ -129,6 +150,13 @@ while run:
     player_draw_y = (player_position.y - player_img.get_height() // 2) - 65
     screen.blit(player_img, (player_draw_x, player_draw_y))
     screen.blit(NPC, (-camera_x * 1.0, 490))
+    for platform in platforms:
+        pygame.draw.rect(screen, (255, 0, 0), platform)
+
+        if hitbox.colliderect(platform) and velocity >= 0:
+            player_position.y = platform.top
+            velocity = 0
+            on_ground = True
 
     screen.blit(Fg, (-camera_x * 1.0, 0))
 
