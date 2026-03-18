@@ -24,7 +24,6 @@ player_L1 = pygame.image.load("Assets/Character/Left_1.png")
 player_L2 = pygame.image.load("Assets/Character/Left_2.png")
 NPC = pygame.image.load("Assets/Character/NPC.png")
 
-
 running_speed = 400
 normal_speed = 250
 
@@ -149,12 +148,12 @@ while run:
     player_draw_x = player_position.x - camera_x
     player_draw_y = (player_position.y - player_img.get_height() // 2) - 65
     screen.blit(player_img, (player_draw_x, player_draw_y))
-    screen.blit(NPC, (-camera_x * 1.0, 490))
+    screen.blit(NPC, (-camera_x * 1.0, 0))
     for platform in platforms:
         pygame.draw.rect(screen, (255, 0, 0), platform)
 
-        if hitbox.colliderect(platform) and velocity >= 0:
-            player_position.y = platform.top
+        if hitbox.colliderect(platform):
+            hitbox.y = platform.top
             velocity = 0
             on_ground = True
 
